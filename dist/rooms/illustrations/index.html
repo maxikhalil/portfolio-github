@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Portfolio · Ambiente 2D</title>
+<link rel="preload" as="image" href="assets/cursor-hand-open-v2.png">
+<link rel="preload" as="image" href="assets/cursor-hand-closed-v2.png">
+<link rel="preload" as="font" href="assets/AnonymousPro-Bold.ttf" type="font/ttf" crossorigin>
+<style>
+  @font-face{
+    font-family:'Anonymous Pro'; src:url('assets/AnonymousPro-Bold.ttf') format('truetype');
+    font-weight:700; font-style:normal; font-display:swap;
+  }
+  :root{
+    --bg:#ffffff;
+    --ink:#121216;
+    --muted:#6f6f76;
+    --line:rgba(0,0,0,.08);
+    --overlay-bg:rgba(90,90,90,.58);
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; width:100%; height:100%; overflow:hidden;
+    background:var(--bg); color:var(--ink);
+    font-family:Arial, Helvetica, sans-serif;
+    touch-action:auto;
+  }
+  body{ height:100dvh; }
+  #app{
+    position:relative; width:100%; height:100%; overflow:hidden; background:var(--bg);
+  }
+  #panSurface{ position:absolute; inset:0; z-index:2; touch-action:none; }
+  #trail{
+    position:absolute; inset:0; z-index:1; pointer-events:none;
+  }
+  #world{
+    position:absolute; width:2200px; height:1500px; left:50%; top:50%;
+    transform:translate(-50%,-50%); transform-origin:0 0;
+    z-index:3; transition:transform .07s linear; touch-action:none;
+  }
+  .top-ui{
+    position:absolute; right:18px; top:16px; z-index:20; display:flex; gap:10px; align-items:center;
+    transition:opacity .25s ease;
+  }
+  .pill{
+    border:1px solid var(--line); background:rgba(255,255,255,.92); color:rgba(0,0,0,.72);
+    border-radius:999px; padding:10px 14px; font-size:12px; backdrop-filter:blur(10px);
+    box-shadow:0 10px 18px rgba(0,0,0,.04);
+  }
+  .ghost-btn{
+    border:1px solid var(--line); background:white; color:var(--ink); border-radius:999px;
+    padding:10px 14px; font-size:12px; font-weight:700; cursor:pointer;
+    box-shadow:0 10px 18px rgba(0,0,0,.04);
+  }
+  .sticky-note{
+    position:absolute; background:#fff9c9; border:1px solid rgba(0,0,0,.08); padding:12px 14px;
+    width:200px; min-height:100px; border-radius:16px; box-shadow:0 18px 30px rgba(0,0,0,.08);
+    font-size:13px; line-height:1.35; color:rgba(0,0,0,.75);
+  }
+  .sticky-note strong{
+    display:block; margin-bottom:8px; color:#111; font-size:13px;
+  }
+  .mini-scribble{
+    position:absolute; font-size:18px; color:rgba(0,0,0,.18); user-select:none; pointer-events:none;
+  }
+  #world, #world *{
+    user-select:none; -webkit-user-select:none; -webkit-user-drag:none;
+  }
+  #app, #app .art{
+    cursor:url("assets/cursor-hand-open-v2.png") 29 31, grab;
+  }
+  #app.is-holding, #app.is-holding .art{
+    cursor:url("assets/cursor-hand-closed-v2.png") 29 31, grabbing;
+  }
+  .art{
+    position:absolute; border:0; padding:0; background:none; cursor:inherit;
+    user-select:none; -webkit-user-select:none; touch-action:none;
+    transform:translate(-50%,-50%) rotate(var(--rot,0deg));
+  }
+  .art .frame{
+    position:relative; width:100%; height:100%; border-radius:28px; overflow:hidden; background:white;
+    box-shadow:0 20px 56px rgba(0,0,0,.12); outline:1px solid rgba(0,0,0,.08);
+    transition:transform .18s ease, box-shadow .18s ease, outline-color .18s ease;
+  }
+  .art:hover .frame{
+    transform:translateY(-4px); box-shadow:0 28px 74px rgba(0,0,0,.16); outline-color:rgba(0,0,0,.18);
+  }
+  .visual{
+    width:100%; height:100%; display:grid; place-items:center; position:relative; overflow:hidden;
+  }
+  .visual .symbol{
+    position:absolute; font-size:clamp(34px, 5vw, 88px); font-weight:800; letter-spacing:-0.05em;
+  }
+  .visual .scribble{
+    position:absolute; width:180%; height:180%; left:-28%; top:-24%;
+    opacity:.18; font-size:28px; line-height:1; transform:rotate(-8deg); white-space:pre-wrap;
+    pointer-events:none;
+  }
+  .meta{
+    position:absolute; left:16px; right:16px; bottom:14px; display:flex; align-items:end;
+    justify-content:space-between; gap:10px; font-size:12px; color:rgba(0,0,0,.68);
+  }
+  .meta .title{ font-weight:700; color:rgba(0,0,0,.9); }
+  .meta .open{
+    opacity:0; transform:translateY(4px); transition:opacity .18s ease, transform .18s ease;
+    font-weight:700; text-transform:lowercase;
+  }
+  .art:hover .open{ opacity:1; transform:translateY(0); }
+  .tape{
+    position:absolute; width:78px; height:18px; background:rgba(255, 237, 167, .72);
+    border:1px solid rgba(0,0,0,.06); border-radius:4px; box-shadow:0 5px 10px rgba(0,0,0,.04); z-index:2;
+  }
+  .tape.one{ top:-8px; left:18px; transform:rotate(-12deg); }
+  .tape.two{ top:-7px; right:22px; transform:rotate(10deg); }
+
+  #overlay{
+    position:absolute; inset:0; z-index:60; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .24s ease, visibility 0s linear .24s;
+  }
+  #overlay.open{ opacity:1; visibility:visible; pointer-events:auto; transition:opacity .24s ease; }
+  .overlay-backdrop{
+    position:absolute; inset:0; background:var(--overlay-bg); backdrop-filter:blur(6px);
+  }
+  .overlay-close{
+    position:absolute; top:18px; right:18px; z-index:5; width:42px; height:42px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.16); color:white;
+    font-size:24px; line-height:1; cursor:pointer;
+  }
+  .overlay-layout{
+    position:relative; width:min(1380px, calc(100vw - 80px)); height:min(780px, calc(100vh - 80px));
+    margin:40px auto; display:grid; grid-template-columns:minmax(360px, 610px) minmax(340px, 1fr);
+    gap:56px; align-items:start; transform:translateY(14px); transition:transform .32s ease;
+  }
+  #overlay.open .overlay-layout{ transform:translateY(0); }
+  .overlay-main{ align-self:center; }
+  .main-image-frame{
+    width:100%; aspect-ratio:4/5; border:2px solid rgba(255,255,255,.55);
+    box-shadow:0 22px 60px rgba(0,0,0,.18); background:white; position:relative; overflow:hidden;
+  }
+  .main-image-visual{
+    position:absolute; inset:0; display:grid; place-items:center; overflow:hidden;
+  }
+  .main-image-visual .bg-scribble{
+    position:absolute; inset:-12%; font-size:40px; line-height:1; opacity:.16; white-space:pre-wrap;
+    transform:rotate(-7deg); color:rgba(0,0,0,.48);
+  }
+  .main-image-visual .symbol{
+    position:relative; font-size:clamp(110px, 14vw, 220px); font-weight:800; letter-spacing:-.05em;
+    color:rgba(0,0,0,.82);
+  }
+  .overlay-info{
+    color:white;
+    padding-top:2px;
+    position:relative;
+  }
+  .overlay-title{
+    font-family:'Anonymous Pro', monospace; font-size:clamp(48px, 6vw, 90px); line-height:.95;
+    font-weight:700; letter-spacing:-.025em; margin:0 0 18px; text-transform:uppercase;
+  }
+  .art-caption, .overlay-description{
+    font-family:Arial, Helvetica, sans-serif;
+    font-weight:400;
+  }
+  .overlay-description{
+    font-size:16px;
+    line-height:1.5;
+    width:min(100%, 48ch);
+    max-width:none;
+    color:rgba(255,255,255,.90);
+    margin-top:4px;
+    margin-bottom:20px;
+  }
+  .overlay-submeta{
+    font-size:13px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.72);
+    margin-bottom:12px;
+  }
+.overlay-tags{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;
+  }
+  .tag{
+    padding:8px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.08); color:rgba(255,255,255,.86); font-size:11px;
+    text-transform:uppercase; letter-spacing:.06em;
+  }
+  .is-overlay-open #world{ pointer-events:none; }
+  .is-overlay-open .top-ui{ opacity:.3; }
+
+  #world{ width:3100px; height:2200px; }
+  .artwork .frame{ border-radius:0; background:transparent; outline:0; box-shadow:0 14px 34px rgba(0,0,0,.13); }
+  .artwork img{ display:block; width:100%; height:100%; object-fit:contain; -webkit-user-drag:none; }
+  .art-caption{ display:block; position:absolute; left:0; top:100%; padding-top:10px; font-size:12px; letter-spacing:.02em; color:#444; opacity:0; transition:opacity .18s; }
+  .artwork:hover .art-caption,.artwork:focus-visible .art-caption{ opacity:1; }
+  .video-badge{ position:absolute; bottom:16px; right:16px; display:grid; place-items:center; width:46px; height:46px; border-radius:50%; color:white; background:rgba(0,0,0,.62); font-size:18px; padding-left:3px; }
+  .overlay-title{ font-size:clamp(38px,5vw,72px); overflow-wrap:anywhere; }
+  #overlay{ overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; }
+  .overlay-backdrop{ position:fixed; }
+  .overlay-close{ position:fixed; }
+  .overlay-layout{ min-height:calc(100% - 80px); height:auto; align-items:center; }
+  .main-image-frame{ width:100%; height:calc(100vh - 100px); max-height:850px; aspect-ratio:auto; background:transparent; border:0; box-shadow:none; }
+  .main-image-visual{ background:transparent !important; }
+  .main-image-visual > .bg-scribble,.main-image-visual > .symbol{ display:none; }
+  .main-image-visual > img,.main-image-visual > video{ display:block; width:100%; height:100%; object-fit:contain; }
+  .overlay-description:empty{ display:none; }
+
+
+
+
+
+  .overlay-reference{ margin:26px 0 0; width:min(100%,440px); }
+  .overlay-reference[hidden]{ display:none; }
+  .overlay-reference img{ display:block; width:100%; height:auto; border:1px solid rgba(255,255,255,.5); box-shadow:0 12px 30px rgba(0,0,0,.16); }
+
+  .touch-hint{ display:none; }
+  .overlay-main, .overlay-info{ min-width:0; }
+  #overlay{ overflow-x:hidden; -webkit-overflow-scrolling:touch; touch-action:pan-y pinch-zoom; }
+  .overlay-close{ width:44px; height:44px; top:max(12px, env(safe-area-inset-top)); right:max(12px, env(safe-area-inset-right)); }
+  .tag{ max-width:100%; overflow-wrap:anywhere; }
+  #app.is-panning #world{ transition:none; }
+  @media (max-width:980px){
+    .overlay-layout{
+      grid-template-columns:minmax(0,1fr); width:calc(100% - 36px); max-width:680px;
+      margin:0 auto; padding:calc(68px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));
+      min-height:100%; height:auto; gap:24px; align-items:start; align-content:start; transform:none; transition:none;
+    }
+    .main-image-frame{
+      width:min(100%, calc(62svh * var(--media-ratio, 0.8)));
+      height:auto; max-height:none; aspect-ratio:var(--media-ratio, 0.8); margin:0 auto;
+    }
+    .overlay-title{ font-size:clamp(32px,7vw,48px); line-height:1.05; margin-bottom:14px; }
+    .overlay-description{ font-size:15px; line-height:1.5; width:100%; max-width:48ch; margin-bottom:18px; }
+    .overlay-reference{ margin-top:22px; width:min(100%,440px); }
+    .overlay-tags{ gap:7px; margin-top:18px; }
+  }
+  @media (max-width:760px), (max-width:980px) and (max-height:500px){
+    .top-ui{
+      left:max(12px, env(safe-area-inset-left)); right:max(12px, env(safe-area-inset-right));
+      top:max(12px, env(safe-area-inset-top)); gap:8px; align-items:start;
+    }
+    .pill{ flex:1; min-width:0; border-radius:16px; padding:9px 11px; font-size:11px; line-height:1.35; }
+    .desktop-hint{ display:none; }
+    .touch-hint{ display:inline; }
+    .ghost-btn{ flex:none; min-height:44px; padding:10px 12px; touch-action:manipulation; }
+    .art-caption{ opacity:1; font-size:calc(12px / var(--world-scale,1)); }
+    .art:hover .frame{ transform:none; box-shadow:0 14px 34px rgba(0,0,0,.13); }
+    .overlay-layout{ width:calc(100% - 32px); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    #world, #overlay, .overlay-layout, .art .frame{ transition:none; }
+  }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="trail"></canvas>
+  <div id="panSurface" aria-hidden="true"></div>
+
+  <div class="top-ui">
+    <div class="pill"><span class="desktop-hint">Arrastrá para explorar · Hacé clic en una pieza para verla.</span><span class="touch-hint">Arrastrá para explorar · Tocá una pieza.</span></div>
+    <button class="ghost-btn" id="clearBtn">Borrar trazo</button>
+  </div>
+
+  <div id="world">
+    <button class="art artwork" data-title="Venus Fly Trap" data-description="Inspirado en «Venus Fly Trap», de MARINA, una canción que me encantó." data-type="Ilustración" data-image="assets/venus.webp" data-tags="Paint Tool SAI" aria-label="Abrir Venus Fly Trap" style="left:610px; top:644px; width:360px; height:480px; --rot:-5deg;">
+      <div class="frame"><img src="assets/venus-thumb.webp" alt="Venus Fly Trap" width="1536" height="2048" draggable="false" decoding="async"></div>
+      <span class="art-caption">Venus Fly Trap</span>
+    </button>
+
+    <button class="art artwork" data-title="Atom" data-description="Un collage de ideas, muy inspirado en JoJo&#x27;s Bizarre Adventure." data-type="Ilustración" data-image="assets/atom.webp" data-tags="Paint Tool SAI" aria-label="Abrir Atom" style="left:330px; top:1599px; width:400px; height:462px; --rot:3deg;">
+      <div class="frame"><img src="assets/atom-thumb.webp" alt="Atom" width="1775" height="2048" draggable="false" decoding="async"></div>
+      <span class="art-caption">Atom</span>
+    </button>
+
+    <button class="art artwork" data-title="Angel" data-description="Lo hice días antes del estreno de Barbie, mientras escuchaba «Angel», de PinkPantheress. Estaba en un momento muy Frutiger Metro de mi vida." data-type="Ilustración" data-image="assets/barbie.webp" data-tags="Paint Tool SAI, Adobe Illustrator" aria-label="Abrir Angel" style="left:1737px; top:570px; width:600px; height:402px; --rot:-3deg;">
+      <div class="frame"><img src="assets/barbie-thumb.webp" alt="Angel" width="1611" height="1080" draggable="false" decoding="async"></div>
+      <span class="art-caption">Angel</span>
+    </button>
+
+    <button class="art artwork" data-title="Cool" data-description="Era verano y estaba obsesionado con «Cool», de Gwen Stefani. Me transmitía una nostalgia veraniega que necesitaba plasmar en un dibujo." data-type="Ilustración" data-image="assets/cool.webp" data-tags="Paint Tool SAI" aria-label="Abrir Cool" style="left:2353px; top:681px; width:440px; height:508px; --rot:4deg;">
+      <div class="frame"><img src="assets/cool-thumb.webp" alt="Cool" width="1775" height="2048" draggable="false" decoding="async"></div>
+      <span class="art-caption">Cool</span>
+    </button>
+
+    <button class="art artwork" data-title="Lara Croft" data-description="Uno de mis personajes favoritos. Amo dibujarla." data-type="Ilustración" data-image="assets/lara.webp" data-tags="Paint Tool SAI" aria-label="Abrir Lara Croft" style="left:1200px; top:1140px; width:360px; height:450px; --rot:3deg;">
+      <div class="frame"><img src="assets/lara-thumb.webp" alt="Lara Croft" width="1080" height="1350" draggable="false" decoding="async"></div>
+      <span class="art-caption">Lara Croft</span>
+    </button>
+
+    <button class="art artwork" data-title="Gilmore Girls" data-description="Proyecto de fotomontaje animado de un póster promocional. Elegí una de mis series favoritas para hacerlo." data-type="Pieza animada" data-image="assets/gilmore.webp" data-tags="Photoshop" data-video="assets/gilmore.mp4" aria-label="Abrir Gilmore Girls" style="left:2520px; top:1657px; width:360px; height:450px; --rot:-2deg;">
+      <div class="frame"><img src="assets/gilmore-thumb.webp" alt="Gilmore Girls" width="1080" height="1350" draggable="false" decoding="async"><span class="video-badge" aria-hidden="true">▶</span></div>
+      <span class="art-caption">Gilmore Girls</span>
+    </button>
+
+    <button class="art artwork" data-title="Gold Rush" data-description="Estaba obsesionado con «gold rush» y con la sensación tan teatral y dramática que me transmitía. Me llevó muchísimo tiempo pintar esta ilustración." data-type="Ilustración" data-image="assets/gold-v2.webp" data-tags="Paint Tool SAI" aria-label="Abrir Gold Rush" style="left:1763px; top:1111px; width:370px; height:460px; --rot:3deg;">
+      <div class="frame"><img src="assets/gold-thumb-v2.webp" alt="Gold Rush" width="1646" height="2048" draggable="false" decoding="async"></div>
+      <span class="art-caption">Gold Rush</span>
+    </button>
+
+    <button class="art artwork" data-title="The Lovers" data-description="Hice esta ilustración para un concurso DTIYS (Draw This in Your Style) organizado por uno de los artistas detrás del corto animado «The Lovers»." data-type="Ilustración" data-image="assets/lovers.webp" data-reference="assets/the-lovers-reference.webp" data-tags="Paint Tool SAI" aria-label="Abrir The Lovers" style="left:2379px; top:1229px; width:600px; height:338px; --rot:-4deg;">
+      <div class="frame"><img src="assets/lovers-thumb.webp" alt="The Lovers" width="1920" height="1080" draggable="false" decoding="async"></div>
+      <span class="art-caption">The Lovers</span>
+    </button>
+
+    <button class="art artwork" data-title="Ford x Lara Croft" data-description="La consigna de este fotomontaje era combinar un producto con un concepto o personaje que nos gustara." data-type="Diseño gráfico" data-image="assets/ford.webp" data-tags="Photoshop, Adobe Illustrator" aria-label="Abrir Ford x Lara Croft" style="left:892px; top:1628px; width:650px; height:361px; --rot:-3deg;">
+      <div class="frame"><img src="assets/ford-thumb.webp" alt="Ford x Lara Croft" width="1800" height="1000" draggable="false" decoding="async"></div>
+      <span class="art-caption">Ford x Lara Croft</span>
+    </button>
+
+    <button class="art artwork" data-title="La escena del crimen" data-description="La consigna era crear una publicidad humorística para un producto. Lo di todo." data-type="Diseño gráfico" data-image="assets/hellmanns.webp" data-tags="Photoshop" aria-label="Abrir La escena del crimen" style="left:1807px; top:1636px; width:680px; height:369px; --rot:2deg;">
+      <div class="frame"><img src="assets/hellmanns-thumb.webp" alt="La escena del crimen" width="2048" height="1111" draggable="false" decoding="async"></div>
+      <span class="art-caption">La escena del crimen</span>
+    </button>
+
+    <button class="art artwork" data-title="Galletotas" data-description="Ilustraciones para la marca Galletotas para ser usadas en distintos medios gráficos." data-type="Ilustración" data-image="assets/galletotas.webp" data-tags="Adobe Illustrator" aria-label="Abrir Galletotas" style="left:628px; top:1148px; width:620px; height:288px; --rot:-3deg;">
+      <div class="frame"><img src="assets/galletotas-thumb.webp" alt="Galletotas" width="2047" height="951" draggable="false" decoding="async"></div>
+      <span class="art-caption">Galletotas</span>
+    </button>
+
+    <button class="art artwork" data-title="Fiesta de disfraces" data-description="Portada para el single musical Fiesta de disfraces, disponible en las plataformas de música." data-type="Ilustración" data-image="assets/fiesta-de-disfraces.webp" data-tags="Adobe Illustrator, Photoshop" aria-label="Abrir Fiesta de disfraces" style="left:1130px; top:593px; width:390px; height:390px; --rot:3deg;">
+      <div class="frame"><img src="assets/fiesta-de-disfraces-thumb.webp" alt="Fiesta de disfraces" width="2048" height="2048" draggable="false" decoding="async"></div>
+      <span class="art-caption">Fiesta de disfraces</span>
+    </button>
+  </div>
+
+  <div id="overlay" aria-hidden="true">
+    <div class="overlay-backdrop"></div>
+    <button class="overlay-close" id="closeOverlay" aria-label="Cerrar">×</button>
+    <div class="overlay-layout">
+      <div class="overlay-main">
+        <div class="main-image-frame">
+          <div class="main-image-visual" id="mainImageVisual">
+            <div class="bg-scribble" id="overlayScribble">notes notes notes
+line line line
+shape shape</div>
+            <div class="symbol" id="overlaySymbol">◐</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay-info">
+        <h2 class="overlay-title" id="overlayTitle">TITULO</h2>
+        <div class="overlay-description" id="overlayDescription">Descripcion general de la pieza, de qué trata y para qué fue hecha</div>
+        <figure class="overlay-reference" id="overlayReference" hidden>
+          <img id="overlayReferenceImage" alt="Referencia visual de The Lovers" decoding="async" draggable="false" width="830" height="472">
+        </figure>
+        <div class="overlay-tags" id="overlayTags"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const app = document.getElementById('app');
+  const world = document.getElementById('world');
+  const canvas = document.getElementById('trail');
+  const ctx = canvas.getContext('2d');
+  const clearBtn = document.getElementById('clearBtn');
+  const artButtons = [...document.querySelectorAll('.art')];
+  const overlay = document.getElementById('overlay');
+  const closeOverlay = document.getElementById('closeOverlay');
+
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayDescription = document.getElementById('overlayDescription');
+  const overlaySymbol = document.getElementById('overlaySymbol');
+  const overlayScribble = document.getElementById('overlayScribble');
+  const overlayTags = document.getElementById('overlayTags');
+  const mainImageVisual = document.getElementById('mainImageVisual');
+  const mainImageFrame = document.querySelector('.main-image-frame');
+
+  const overlayReference = document.getElementById('overlayReference');
+  const overlayReferenceImage = document.getElementById('overlayReferenceImage');
+
+  let dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  let pointerDown = false, pointerId = null, startX = 0, startY = 0, prevDrawX = null, prevDrawY = null, moved = false;
+  let panX = 110, panY = -68, dragStartPanX = 0, dragStartPanY = 0;
+  let worldScale = 1, mobileLayout = false, layoutReady = false;
+  let viewWidth = innerWidth, viewHeight = innerHeight;
+
+  function resize(){
+    const old = document.createElement('canvas');
+    old.width = canvas.width; old.height = canvas.height;
+    if (canvas.width && canvas.height) old.getContext('2d').drawImage(canvas, 0, 0);
+
+    const centerX = world.offsetWidth / 2 - panX / worldScale;
+    const centerY = world.offsetHeight / 2 - panY / worldScale;
+    viewWidth = app.clientWidth; viewHeight = app.clientHeight;
+    mobileLayout = viewWidth <= 760 || (viewWidth <= 980 && viewHeight <= 500);
+    worldScale = mobileLayout ? Math.min(0.6, Math.max(0.44, viewWidth / 720)) : 1;
+    world.style.setProperty('--world-scale', worldScale);
+
+    if (!layoutReady && mobileLayout){
+      // Begin at the central artwork, with the surrounding collage still discoverable.
+      panX = (world.offsetWidth / 2 - 1200) * worldScale;
+      panY = (world.offsetHeight / 2 - 1140) * worldScale;
+    } else if (layoutReady){
+      // Preserve the point being explored through rotation and browser-bar resizing.
+      panX = (world.offsetWidth / 2 - centerX) * worldScale;
+      panY = (world.offsetHeight / 2 - centerY) * worldScale;
+    }
+    layoutReady = true;
+    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.round(viewWidth * dpr); canvas.height = Math.round(viewHeight * dpr);
+    canvas.style.width = viewWidth + 'px'; canvas.style.height = viewHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (old.width && old.height){
+      ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, viewWidth, viewHeight);
+    }
+    prevDrawX = null; prevDrawY = null;
+    clampPan(); updateWorld();
+  }
+
+  function updateWorld(){
+    const x = -world.offsetWidth * worldScale / 2 + panX;
+    const y = -world.offsetHeight * worldScale / 2 + panY;
+    world.style.transform = `translate(${x}px, ${y}px) scale(${worldScale})`;
+  }
+
+  function clampPan(){
+    const maxX = Math.max(0, (world.offsetWidth * worldScale - viewWidth) / 2 + (mobileLayout ? 60 : 220));
+    const maxY = Math.max(0, (world.offsetHeight * worldScale - viewHeight) / 2 + (mobileLayout ? 80 : 180));
+    panX = Math.max(-maxX, Math.min(maxX, panX));
+    panY = Math.max(-maxY, Math.min(maxY, panY));
+  }
+
+  // Advance by distance drawn, independent of pointer speed or event frequency.
+  const initialTrailHue = 210;
+  const huePerPixel = 0.12;
+  let trailHue = initialTrailHue;
+
+  function drawSegment(x1, y1, x2, y2){
+    const distance = Math.hypot(x2 - x1, y2 - y1);
+    if (!distance) return;
+    const hueChange = distance * huePerPixel;
+    const steps = Math.max(1, Math.ceil(distance / 32));
+    function gradient(alpha){
+      const paint = ctx.createLinearGradient(x1, y1, x2, y2);
+      for (let i = 0; i <= steps; i++){
+        const t = i / steps;
+        const hue = (trailHue + hueChange * t) % 360;
+        paint.addColorStop(t, `hsla(${hue}, 80%, 43%, ${alpha})`);
+      }
+      return paint;
+    }
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = gradient(0.10); ctx.lineWidth = 9; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = gradient(0.90); ctx.lineWidth = 3.2; ctx.stroke();
+    ctx.restore();
+    trailHue = (trailHue + hueChange) % 360;
+  }
+
+  function clearCanvas(){
+    ctx.clearRect(0, 0, viewWidth, viewHeight);
+    trailHue = initialTrailHue;
+    prevDrawX = null; prevDrawY = null;
+  }
+
+  let activeVideo = null;
+
+  function openOverlay(btn){
+    // Focusing an offscreen piece must not move the fixed detail panel.
+    app.scrollLeft = 0; app.scrollTop = 0;
+    if (activeVideo){ activeVideo.pause(); activeVideo.remove(); activeVideo = null; }
+    mainImageVisual.querySelectorAll('img, video').forEach(el => el.remove());
+    const thumbnail = btn.querySelector('img');
+    const ratio = Number(thumbnail.getAttribute('width')) / Number(thumbnail.getAttribute('height'));
+    mainImageFrame.style.setProperty('--media-ratio', ratio || 0.8);
+    overlayTitle.textContent = btn.dataset.title || '2D';
+    overlayDescription.textContent = btn.dataset.description || '';
+    const src = btn.dataset.image;
+    const media = document.createElement(btn.dataset.video ? 'video' : 'img');
+    if (btn.dataset.video){
+      media.poster = src;
+      media.src = btn.dataset.video;
+      media.loop = true;
+      media.muted = true;
+      media.autoplay = true;
+      media.playsInline = true;
+      media.controls = true;
+      media.preload = 'metadata';
+      media.setAttribute('aria-label', btn.dataset.title);
+      activeVideo = media;
+    } else {
+      media.decoding = 'async';
+      media.src = src;
+      media.alt = btn.dataset.title;
+      media.draggable = false;
+    }
+    mainImageVisual.appendChild(media);
+    overlayTags.replaceChildren();
+    const tags = new Set([btn.dataset.type, ...(btn.dataset.tags || '').split(',')]
+      .map(value => (value || '').trim()).filter(Boolean));
+    tags.forEach(label => {
+      const tag = document.createElement('div');
+      tag.className = 'tag'; tag.textContent = label;
+      overlayTags.appendChild(tag);
+    });
+    const reference = btn.dataset.reference;
+    overlayReference.hidden = !reference;
+    if (reference) overlayReferenceImage.src = reference;
+    else overlayReferenceImage.removeAttribute('src');
+    overlay.classList.add('open');
+    app.classList.add('is-overlay-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.scrollTop = 0;
+    if (activeVideo) activeVideo.play().catch(() => { /* Native controls remain available. */ });
+  }
+
+  function closeCurrentOverlay(){
+    prevDrawX = null; prevDrawY = null;
+    if (activeVideo){ activeVideo.pause(); activeVideo.currentTime = 0; }
+    overlay.classList.remove('open');
+    app.classList.remove('is-overlay-open');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  // Disable native image/text dragging inside the artwork canvas.
+  world.addEventListener('dragstart', e => e.preventDefault());
+
+  app.addEventListener('pointerdown', e => {
+    if (overlay.classList.contains('open') || e.target.closest('.top-ui')) return;
+    if (pointerDown || !e.isPrimary || e.button !== 0) return;
+
+    pointerDown = true;
+    app.classList.add('is-holding');
+    pointerId = e.pointerId;
+    startX = e.clientX;
+    startY = e.clientY;
+    prevDrawX = e.clientX;
+    prevDrawY = e.clientY;
+    dragStartPanX = panX;
+    dragStartPanY = panY;
+    moved = false;
+
+    // Capture on the artwork so a stationary click still reaches its button.
+    const captureTarget = e.target.closest('.art') || app;
+    captureTarget.setPointerCapture?.(pointerId);
+  });
+
+  app.addEventListener('pointermove', e => {
+    if (overlay.classList.contains('open')) return;
+
+    if (e.pointerType === 'mouse' && !pointerDown){
+      if (prevDrawX !== null) drawSegment(prevDrawX, prevDrawY, e.clientX, e.clientY);
+      prevDrawX = e.clientX; prevDrawY = e.clientY;
+      return;
+    }
+
+    if (!pointerDown || e.pointerId !== pointerId) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.hypot(dx, dy) > 6) moved = true;
+
+    if (moved){
+      e.preventDefault();
+      app.classList.add('is-panning');
+      panX = dragStartPanX + dx; panY = dragStartPanY + dy;
+      clampPan(); updateWorld();
+    }
+
+    if (prevDrawX !== null) drawSegment(prevDrawX, prevDrawY, e.clientX, e.clientY);
+    prevDrawX = e.clientX; prevDrawY = e.clientY;
+  });
+
+  function endPointer(e){
+    if (e.pointerId !== pointerId) return;
+    if (e.type === 'pointercancel') moved = true;
+    pointerDown = false; pointerId = null; prevDrawX = null; prevDrawY = null;
+    app.classList.remove('is-panning', 'is-holding');
+  }
+
+  app.addEventListener('pointerup', endPointer);
+  app.addEventListener('pointercancel', endPointer);
+  app.addEventListener('lostpointercapture', endPointer);
+  window.addEventListener('blur', () => {
+    if (!pointerDown) return;
+    moved = true;
+    pointerDown = false; pointerId = null; prevDrawX = null; prevDrawY = null;
+    app.classList.remove('is-panning', 'is-holding');
+  });
+
+  // The browser also emits a click after a drag; consume only that click.
+  app.addEventListener('click', e => {
+    if (!moved || e.detail === 0) return;
+    moved = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  artButtons.forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      openOverlay(btn);
+    });
+  });
+
+  closeOverlay.addEventListener('click', closeCurrentOverlay);
+  overlay.addEventListener('click', e => {
+    if (e.target.classList.contains('overlay-backdrop')) closeCurrentOverlay();
+  });
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeCurrentOverlay();
+  });
+
+  clearBtn.addEventListener('click', clearCanvas);
+  window.addEventListener('resize', resize);
+  resize();
+})();
+</script>
+</body>
+</html>

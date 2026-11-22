@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Marmolado, tesis de Diseño Multimedial. Sección del portafolio de Maxi.">
+  <title>Marmolado · Tesis de Diseño Multimedial</title>
+  <link rel="preload" href="EXPORTS-PAGINA/logoTesis.png" as="image">
+  <link rel="preload" href="assets/boton-descargar.png" as="image">
+  <style>
+    @font-face {
+      font-family: Blankide;
+      src: url('assets/blankide.ttf') format('truetype');
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Shadows Into Light';
+      src: url('assets/shadows-into-light.ttf') format('truetype');
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+    :root {
+      --scene-width: min(100vw, 1920px);
+      /* El mockup de referencia mide 1402 × 2048. */
+      --unit: calc(var(--scene-width) / 1402);
+      --header-height: clamp(72px, 5.42vw, 104px);
+      --globe-width: calc(var(--unit) * 610);
+      --globe-back-opacity: .85;
+      --globe-backdrop: #28282a;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 280px; background: #48283d; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow-x: clip;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+    .thesis-scene {
+      position: relative;
+      isolation: isolate;
+      /* La mesa empieza en 1220 y termina aproximadamente en 1817. */
+      height: calc(var(--unit) * 1817);
+      overflow: hidden;
+      background-color: #48283d;
+      background-image: url('EXPORTS-PAGINA/PARED.jpg');
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+    }
+    .corkboard {
+      position: absolute;
+      z-index: 1;
+      top: calc(var(--unit) * 110);
+      left: 50%;
+      width: calc(var(--unit) * 1735);
+      height: auto;
+      max-width: none;
+      transform: translateX(-50%);
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+    /* Los objetos comparten la cuadrícula del mockup y escalan juntos. */
+    .scene-objects {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      left: 50%;
+      width: var(--scene-width);
+      height: 100%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .cork-project {
+      position: absolute;
+      z-index: 0;
+      top: calc(var(--unit) * 429);
+      left: calc(var(--unit) * 72);
+      width: calc(var(--unit) * 621);
+      height: auto;
+      max-width: none;
+      display: block;
+      user-select: none;
+    }
+    .secret-photo-zone {
+      position: absolute;
+      z-index: 1;
+      top: calc(var(--unit) * 812);
+      left: calc(var(--unit) * 282);
+      width: calc(var(--unit) * 395);
+      height: calc(var(--unit) * 421);
+      overflow: hidden;
+      clip-path: polygon(0 8%, 93% 0, 100% 92%, 6% 100%);
+      mix-blend-mode: overlay;
+      pointer-events: auto;
+      cursor: crosshair;
+      outline: none;
+    }
+    .secret-lens {
+      position: absolute;
+      top: var(--lens-y, 50%);
+      left: var(--lens-x, 50%);
+      width: calc(var(--unit) * 126);
+      aspect-ratio: 1;
+      border: calc(var(--unit) * 2) solid #ff3853;
+      border-radius: 50%;
+      background: #ff0038;
+      box-shadow: inset 0 0 calc(var(--unit) * 12) #ff1644aa, 0 0 calc(var(--unit) * 17) #ff003bcc;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease;
+    }
+    .secret-photo-zone.is-revealed .secret-lens,
+    .secret-photo-zone:focus-visible .secret-lens { opacity: 1; }
+    .secret-photo-zone:focus-visible { outline: calc(var(--unit) * 2) solid #ff3853; }
+    .cork-paper,
+    .cork-note,
+    .cork-photo,
+    .cork-polaroid,
+    .cork-signature {
+      position: absolute;
+      z-index: 0;
+      height: auto;
+      max-width: none;
+      display: block;
+      user-select: none;
+    }
+    .cork-paper {
+      top: calc(var(--unit) * 158);
+      left: calc(var(--unit) * 107);
+      width: calc(var(--unit) * 513);
+    }
+    .cork-note {
+      top: calc(var(--unit) * 309);
+      left: calc(var(--unit) * 624);
+      width: calc(var(--unit) * 291);
+    }
+    .cork-photo {
+      top: calc(var(--unit) * 573);
+      left: calc(var(--unit) * 843);
+      width: calc(var(--unit) * 440);
+    }
+    .cork-kisses {
+      position: absolute;
+      z-index: 2;
+      top: calc(var(--unit) * 653);
+      left: calc(var(--unit) * 1190);
+      width: calc(var(--unit) * 160);
+      height: auto;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+      transform-origin: center;
+      animation: cutout-stop-motion 1.14s steps(1, end) infinite;
+      animation-delay: -.64s;
+    }
+    .cork-polaroid {
+      top: calc(var(--unit) * 153);
+      left: calc(var(--unit) * 934);
+      width: calc(var(--unit) * 314);
+    }
+    .cork-cutout {
+      position: absolute;
+      z-index: 1;
+      height: auto;
+      max-width: none;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+      transform-origin: center;
+      animation: cutout-stop-motion 1.14s steps(1, end) infinite;
+    }
+    .cork-stars {
+      top: calc(var(--unit) * 197);
+      left: calc(var(--unit) * 164);
+      width: calc(var(--unit) * 141);
+    }
+    .cork-butterflies {
+      top: calc(var(--unit) * 407);
+      left: calc(var(--unit) * 1022);
+      width: calc(var(--unit) * 186);
+      animation-delay: -.37s;
+      animation-duration: 1.31s;
+    }
+    @keyframes cutout-stop-motion {
+      0%, 100% { transform: translate(0, 0) rotate(0); }
+      17% { transform: translate(calc(var(--unit) * 1.1), calc(var(--unit) * -.7)) rotate(.7deg); }
+      34% { transform: translate(calc(var(--unit) * -.9), calc(var(--unit) * .8)) rotate(-.6deg); }
+      51% { transform: translate(calc(var(--unit) * .6), calc(var(--unit) * .5)) rotate(.9deg); }
+      68% { transform: translate(calc(var(--unit) * -.8), calc(var(--unit) * -.9)) rotate(-.8deg); }
+      85% { transform: translate(calc(var(--unit) * .5), calc(var(--unit) * -.2)) rotate(.3deg); }
+    }
+    .cork-signature {
+      top: calc(var(--unit) * 188);
+      left: calc(var(--unit) * 664);
+      width: calc(var(--unit) * 219);
+      opacity: .9;
+      mix-blend-mode: color-burn;
+    }
+    .paper-copy, .cork-caption {
+      position: absolute;
+      z-index: 1;
+      margin: 0;
+      font-family: 'Shadows Into Light', cursive;
+      user-select: none;
+    }
+    .paper-title {
+      top: calc(var(--unit) * 201);
+      left: calc(var(--unit) * 300);
+      color: #151218;
+      font-family: Blankide, 'Shadows Into Light', cursive;
+      font-size: calc(var(--unit) * 44);
+      font-weight: 400;
+      transform: rotate(-2deg);
+    }
+    .paper-body {
+      top: calc(var(--unit) * 284);
+      left: calc(var(--unit) * 198);
+      width: calc(var(--unit) * 413);
+      color: #292422;
+      font-size: calc(var(--unit) * 21);
+      line-height: 1.46;
+      transform: rotate(-2deg);
+    }
+    .cork-caption {
+      color: #fff9f1;
+      font-size: calc(var(--unit) * 23);
+      white-space: nowrap;
+      text-shadow:
+        0 0 calc(var(--unit) * 2) #fff9f1b8,
+        0 0 calc(var(--unit) * 8) #fff0d45c;
+      transform: rotate(-3deg);
+      filter: url(#handdrawn-ink);
+      animation: handdrawn-drift .84s steps(1, end) infinite;
+    }
+    @keyframes handdrawn-drift {
+      0%, 100% { transform: translate(0, 0) rotate(-3deg); }
+      20% { transform: translate(calc(var(--unit) * .45), calc(var(--unit) * -.35)) rotate(-2.85deg); }
+      40% { transform: translate(calc(var(--unit) * -.4), calc(var(--unit) * .3)) rotate(-3.1deg); }
+      60% { transform: translate(calc(var(--unit) * .25), calc(var(--unit) * .35)) rotate(-2.9deg); }
+      80% { transform: translate(calc(var(--unit) * -.25), calc(var(--unit) * -.2)) rotate(-3.05deg); }
+    }
+    .caption-model { top: calc(var(--unit) * 530); left: calc(var(--unit) * 619); }
+    .caption-texture { top: calc(var(--unit) * 630); left: calc(var(--unit) * 583); }
+    .caption-code { top: calc(var(--unit) * 729); left: calc(var(--unit) * 636); }
+    .desk-table, .desk-object {
+      position: absolute;
+      height: auto;
+      max-width: none;
+      display: block;
+      user-select: none;
+    }
+    .desk-table {
+      z-index: 1;
+      top: calc(var(--unit) * 1220);
+      left: calc(var(--unit) * -225);
+      width: calc(var(--unit) * 1850);
+    }
+    .desk-vinyl, .vinyl-canvas {
+      position: absolute;
+      z-index: 4;
+      top: calc(var(--unit) * 1168);
+      left: calc(var(--unit) * -9);
+      width: calc(var(--unit) * 641);
+      height: auto;
+      max-width: none;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+    .desk-vinyl[hidden], .vinyl-canvas[hidden] { display: none; }
+    .vinyl-hotspot {
+      position: absolute;
+      z-index: 5;
+      top: calc(var(--unit) * 1268);
+      left: calc(var(--unit) * 171);
+      width: calc(var(--unit) * 310);
+      height: calc(var(--unit) * 270);
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .vinyl-hotspot:focus { outline: none; }
+    .vinyl-hotspot:focus-visible { outline: calc(var(--unit) * 2) solid #ffd1ad; outline-offset: calc(var(--unit) * 3); }
+    .desk-cards {
+      z-index: 2;
+      top: calc(var(--unit) * 1668);
+      left: calc(var(--unit) * -70);
+      width: calc(var(--unit) * 1450);
+    }
+    .desk-glasses {
+      z-index: 5;
+      top: calc(var(--unit) * 1555);
+      left: calc(var(--unit) * 366);
+      width: calc(var(--unit) * 560);
+    }
+    .snow-globe {
+      position: absolute;
+      z-index: 2;
+      top: calc(var(--unit) * 862);
+      left: calc(var(--unit) * 730);
+      width: var(--globe-width);
+      aspect-ratio: 983 / 1560;
+      margin: 0;
+      user-select: none;
+    }
+    .globe-sphere {
+      position: absolute;
+      top: 0;
+      left: 3%;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      overflow: hidden;
+      isolation: isolate;
+      background: var(--globe-backdrop);
+      pointer-events: auto;
+      cursor: grab;
+      touch-action: pan-y;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      transition: box-shadow .18s ease;
+    }
+    .globe-sphere.is-dragging { cursor: grabbing; }
+    .globe-sphere:focus-visible:not(.glow-paused),
+    .globe-sphere.is-hovered {
+      outline: none;
+      box-shadow: 0 0 16px 3px #d8f4ff88, 0 0 36px 8px #a0d9ff44;
+    }
+    .globe-layer,
+    .globe-composite {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .globe-back { z-index: 1; opacity: var(--globe-back-opacity); }
+    .globe-model {
+      z-index: 2;
+      inset: 6.3723296% auto auto -28.7741607%;
+      width: 152.3499491%;
+      height: 85.6968464%;
+    }
+    .globe-front { z-index: 3; }
+    .globe-reflections { display: none; }
+    .globe-composite { z-index: 4; }
+    .globe-composite[hidden] { display: none; }
+    .globe-sphere.is-composited .globe-layer { visibility: hidden; }
+    .globe-drag-hint {
+      position: absolute;
+      z-index: 5;
+      top: 81%;
+      left: 50%;
+      width: 49%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity .25s ease;
+      pointer-events: none;
+    }
+    .globe-sphere.is-hovered .globe-drag-hint { opacity: 1; }
+    .globe-drag-hint img {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: url(#handdrawn-ink);
+      animation: drag-hint-drift .84s steps(1, end) infinite;
+    }
+    @keyframes drag-hint-drift {
+      0%, 100% { transform: translate(0, 0) rotate(0); }
+      20% { transform: translate(1px, -1px) rotate(.3deg); }
+      40% { transform: translate(-1px, 1px) rotate(-.3deg); }
+      60% { transform: translate(1px, 1px) rotate(.2deg); }
+      80% { transform: translate(-1px, 0) rotate(-.2deg); }
+    }
+    .globe-base {
+      position: absolute;
+      z-index: 5;
+      top: 57.6923077%;
+      left: -7%;
+      width: 107.1056444%;
+      height: auto;
+      display: block;
+      pointer-events: none;
+    }
+    .thesis-header {
+      position: fixed;
+      z-index: 20;
+      inset: 0 0 auto;
+      height: var(--header-height);
+      background: linear-gradient(180deg, #9f7a8f60 0%, #c0a78d44 67%, #e4cb98aa 100%);
+      -webkit-backdrop-filter: blur(25px);
+      backdrop-filter: blur(25px);
+      isolation: isolate;
+    }
+    .header-inner {
+      width: min(100%, 1920px);
+      height: 100%;
+      margin-inline: auto;
+      padding-inline: clamp(16px, 5.3vw, 102px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .thesis-logo {
+      display: block;
+      flex: 0 1 auto;
+      width: clamp(145px, 10.83vw, 208px);
+      height: auto;
+      user-select: none;
+    }
+    .download-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: clamp(170px, 12vw, 230px);
+      aspect-ratio: 335 / 92;
+      appearance: none;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      color: white;
+      background-color: #812576;
+      background-image: url('assets/boton-descargar.png');
+      background-size: 400% 700%;
+      background-position: left top;
+      box-shadow: 0 0 2px 1px #fff4db88, 0 0 9px 2px #fff5e144, 0 0 17px #e7a2de33;
+      transition: box-shadow .18s ease;
+      cursor: pointer;
+      isolation: isolate;
+      container-type: inline-size;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .download-button canvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .download-label {
+      position: relative;
+      z-index: 1;
+      display: block;
+      padding-inline: 6%;
+      color: white;
+      font-family: Blankide, 'Arial Black', sans-serif;
+      font-size: 6.15cqw;
+      font-weight: 400;
+      line-height: 1.15;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px #4a234c55;
+      transform: translateY(-1px);
+      pointer-events: none;
+    }
+    .download-button:hover,
+    .download-button:focus-visible {
+      box-shadow: 0 0 3px 1px #fff7eaaa, 0 0 12px 2px #ffe7c755, 0 0 20px #e7a2de44;
+    }
+    .download-button:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 6px;
+    }
+    .download-message {
+      position: fixed;
+      z-index: 30;
+      top: calc(var(--header-height) + 16px);
+      right: max(5.3vw, calc((100vw - 1920px) / 2 + 102px));
+      max-width: min(340px, calc(100vw - 32px));
+      padding: 14px 18px;
+      background: #fff7e9;
+      color: #3c2333;
+      box-shadow: 0 4px 16px #24102344;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .download-message[hidden] { display: none; }
+    @supports not (backdrop-filter: blur(25px)) {
+      .thesis-header { background: linear-gradient(#a67d8e, #d2b78d); }
+    }
+    @media (max-width: 600px) {
+      :root {
+        --header-height: 60px;
+        --unit: calc(100vw / 390);
+        --scene-width: 100vw;
+        --globe-width: calc(var(--unit) * 230);
+      }
+      .header-inner { padding-inline: 5%; gap: 12px; }
+      .thesis-logo { width: clamp(120px, 32vw, 136px); }
+      .download-button { width: clamp(150px, 32vw, 160px); }
+      .download-message { right: 16px; }
+      .thesis-scene {
+        margin-top: var(--header-height);
+        height: calc(var(--unit) * 720);
+        background-size: auto 100%;
+        background-position: center top;
+      }
+      .scene-objects { width: calc(var(--unit) * 390); }
+      .corkboard { top: calc(var(--unit) * 38); width: calc(var(--unit) * 730); }
+      .cork-project { top: calc(var(--unit) * 183); left: calc(var(--unit) * -6); width: calc(var(--unit) * 211); }
+      .secret-photo-zone {
+        top: calc(var(--unit) * 318); left: calc(var(--unit) * 66);
+        width: calc(var(--unit) * 139); height: calc(var(--unit) * 145);
+      }
+      .secret-lens {
+        top: 0; left: 0;
+        width: 100%; height: 100%; aspect-ratio: auto;
+        border: 0; border-radius: 0; box-shadow: none;
+        transform: none;
+      }
+      .secret-photo-zone:focus-visible .secret-lens { opacity: 0; }
+      .secret-photo-zone.is-revealed .secret-lens { opacity: 1; }
+      .cork-paper { top: calc(var(--unit) * 75); left: calc(var(--unit) * -1); width: calc(var(--unit) * 192); }
+      .cork-stars { top: calc(var(--unit) * 84); left: calc(var(--unit) * 16); width: calc(var(--unit) * 49); }
+      .paper-title {
+        top: calc(var(--unit) * 86); left: calc(var(--unit) * 54);
+        font-size: clamp(15px, calc(var(--unit) * 18), 21px);
+      }
+      .paper-body {
+        top: calc(var(--unit) * 120); left: calc(var(--unit) * 28);
+        width: calc(var(--unit) * 164); font-size: clamp(10px, calc(var(--unit) * 11), 13px);
+        line-height: 1.18;
+      }
+      .cork-signature { top: calc(var(--unit) * 80); left: calc(var(--unit) * 211); width: calc(var(--unit) * 77); }
+      .cork-note { top: calc(var(--unit) * 139); left: calc(var(--unit) * 205); width: calc(var(--unit) * 101); }
+      .cork-caption { font-size: clamp(10px, calc(var(--unit) * 12), 14px); }
+      .caption-model { top: calc(var(--unit) * 219); left: calc(var(--unit) * 195); }
+      .caption-texture { top: calc(var(--unit) * 260); left: calc(var(--unit) * 180); }
+      .caption-code { top: calc(var(--unit) * 294); left: calc(var(--unit) * 204); }
+      .cork-polaroid { top: calc(var(--unit) * 71); left: calc(var(--unit) * 304); width: calc(var(--unit) * 122); }
+      .cork-butterflies { top: calc(var(--unit) * 154); left: calc(var(--unit) * 350); width: calc(var(--unit) * 52); }
+      .cork-photo { top: calc(var(--unit) * 240); left: calc(var(--unit) * 242); width: calc(var(--unit) * 151); }
+      .cork-kisses { top: calc(var(--unit) * 240); left: calc(var(--unit) * 293); width: calc(var(--unit) * 57); }
+      .desk-table { top: calc(var(--unit) * 457); left: calc(var(--unit) * -145); width: calc(var(--unit) * 900); }
+      .desk-vinyl, .vinyl-canvas {
+        top: calc(var(--unit) * 441); left: calc(var(--unit) * -28);
+        width: calc(var(--unit) * 286);
+      }
+      .vinyl-hotspot {
+        top: calc(var(--unit) * 472); left: calc(var(--unit) * 46);
+        width: calc(var(--unit) * 154); height: calc(var(--unit) * 127);
+      }
+      .desk-cards { top: calc(var(--unit) * 690); left: calc(var(--unit) * -122); width: calc(var(--unit) * 500); }
+      .desk-glasses { top: calc(var(--unit) * 597); left: calc(var(--unit) * 102); width: calc(var(--unit) * 225); }
+      .snow-globe { top: calc(var(--unit) * 363); left: calc(var(--unit) * 194); }
+    }
+    @media (max-width: 340px) {
+      :root { --header-height: 56px; }
+      .header-inner { padding-inline: 10px; gap: 8px; }
+      .thesis-logo { width: 110px; }
+      .download-button { width: 138px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .download-button { transition: none; }
+      .globe-sphere { transition: none; }
+      .cork-caption { animation: none; filter: none; }
+      .cork-cutout { animation: none; }
+      .cork-kisses { animation: none; }
+      .secret-lens { transition: none; }
+      .globe-drag-hint { transition: none; }
+      .globe-drag-hint img { animation: none; filter: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;pointer-events:none">
+    <filter id="handdrawn-ink" x="-15%" y="-45%" width="130%" height="190%">
+      <feTurbulence type="fractalNoise" baseFrequency=".025 .065" numOctaves="1" seed="2" result="paper-noise">
+        <animate attributeName="seed" values="2;5;1;7;3;2" dur=".84s" calcMode="discrete" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="paper-noise" scale="2" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+  <header class="thesis-header">
+    <div class="header-inner">
+      <img class="thesis-logo" src="EXPORTS-PAGINA/logoTesis.png" width="384" height="156" alt="Marmolado · Tesis Diseño Multimedial" draggable="false">
+      <button class="download-button" type="button" aria-describedby="download-hint">
+        <canvas width="335" height="92" aria-hidden="true"></canvas>
+        <span class="download-label">DESCARGAR EXPERIENCIA</span>
+      </button>
+    </div>
+  </header>
+  <main class="thesis-scene" aria-labelledby="thesis-title">
+    <h1 id="thesis-title" class="sr-only">Marmolado, tesis de Diseño Multimedial</h1>
+    <img class="corkboard" src="EXPORTS-PAGINA/PIZARRA.png" width="1456" height="1001" alt="" aria-hidden="true" draggable="false" fetchpriority="high">
+    <div class="scene-objects" id="scene-objects">
+      <img class="cork-project" src="EXPORTS-PAGINA/SEC-PERSP.png" width="729" height="943" alt="Boceto del escenario, herramientas utilizadas y captura del juego" draggable="false">
+      <div class="secret-photo-zone" tabindex="0" role="button" aria-pressed="false" aria-label="Revelar el código secreto de la foto">
+        <span class="secret-lens" aria-hidden="true"></span>
+      </div>
+      <img class="cork-paper" src="EXPORTS-PAGINA/PAPEL-Izq.png" width="592" height="346" alt="" aria-hidden="true" draggable="false">
+      <img class="cork-cutout cork-stars" src="EXPORTS-PAGINA/estrellas.png" width="218" height="123" alt="" aria-hidden="true" draggable="false">
+      <h2 class="paper-copy paper-title">Lo que hicimos</h2>
+      <p class="paper-copy paper-body">una tesis de diseño multimedial<br>Identidad, piezas gráficas y una experiencia<br>interactiva desarrollada en Unity.</p>
+      <img class="cork-signature" src="EXPORTS-PAGINA/firma-marmo.png" width="292" height="178" alt="" aria-hidden="true" draggable="false">
+      <img class="cork-note" src="EXPORTS-PAGINA/NotaRoja.png" width="440" height="465" alt="Nota roja: Mis roles" draggable="false">
+      <span class="cork-caption caption-model">Diseño de nivel y modelado</span>
+      <span class="cork-caption caption-texture">Texturizado</span>
+      <span class="cork-caption caption-code">Programación</span>
+      <img class="cork-polaroid" src="EXPORTS-PAGINA/POLAROID.png" width="398" height="516" alt="Foto instantánea del equipo" draggable="false">
+      <img class="cork-cutout cork-butterflies" src="EXPORTS-PAGINA/mariposas.png" width="319" height="194" alt="" aria-hidden="true" draggable="false">
+      <img class="cork-photo" src="EXPORTS-PAGINA/FOTO.png" width="338" height="265" alt="Foto del equipo de Marmolado" draggable="false">
+      <img class="cork-kisses" src="EXPORTS-PAGINA/besos.png" width="652" height="537" alt="" aria-hidden="true" draggable="false">
+      <img class="desk-table" src="EXPORTS-PAGINA/BOX-MESA.png" width="2048" height="660" alt="Caja naranja de Marmolado sobre la mesa" draggable="false">
+      <img class="desk-vinyl" src="EXPORTS-PAGINA/discoRotar/caja_00000.png" width="641" height="515" alt="" aria-hidden="true" draggable="false">
+      <canvas class="vinyl-canvas" width="641" height="515" aria-hidden="true" hidden></canvas>
+      <button class="vinyl-hotspot" type="button" aria-label="Girar el disco de Marmolado" aria-pressed="false"></button>
+      <img class="desk-object desk-cards" src="EXPORTS-PAGINA/CARTAS.png" width="1369" height="347" alt="Cartas ilustradas de Marmolado" draggable="false">
+      <img class="desk-object desk-glasses" src="EXPORTS-PAGINA/ANTEOJOS.png" width="649" height="371" alt="Anteojos de Marmolado" draggable="false">
+      <figure class="snow-globe" aria-label="Globo de nieve de Marmolado">
+        <div class="globe-sphere" tabindex="0" role="slider" aria-label="Girar el escenario dentro del globo" aria-describedby="globe-hint" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="337.5" aria-valuenow="67.5" aria-valuetext="67.5 grados">
+          <img class="globe-layer globe-back" src="EXPORTS-PAGINA/bola/fondoDetras.png" width="324" height="324" alt="" draggable="false">
+          <img class="globe-layer globe-model" src="assets/globo-modelo.png" width="1920" height="1080" alt="" draggable="false">
+          <img class="globe-layer globe-front" src="EXPORTS-PAGINA/bola/fondoDelante.png" width="324" height="324" alt="" draggable="false">
+          <img class="globe-layer globe-reflections" src="EXPORTS-PAGINA/bola/reflejos.png" width="735" height="735" alt="" draggable="false">
+          <canvas class="globe-composite" width="648" height="648" aria-hidden="true" hidden></canvas>
+          <span class="globe-drag-hint" aria-hidden="true"><img src="EXPORTS-PAGINA/simboloRotar@2x.png" width="2048" height="508" alt="" draggable="false"></span>
+        </div>
+        <img class="globe-base" src="EXPORTS-PAGINA/bola/baseBola.png" width="794" height="480" alt="" draggable="false">
+      </figure>
+    </div>
+  </main>
+  <p class="sr-only" id="globe-hint">Arrastrá horizontalmente para girar el escenario. Con el teclado, usá las flechas izquierda y derecha.</p>
+  <p class="sr-only" id="download-hint">Prototipo: el archivo de la experiencia todavía no está vinculado.</p>
+  <div class="download-message" id="download-message" role="status" hidden>El archivo de la experiencia todavía no está vinculado.</div>
+  <script>
+    (() => {
+      'use strict';
+      // Al tener el ZIP final, reemplazar la cadena vacía por su URL.
+      const EXPERIENCE_URL = '';
+      const SHEET_URL = 'assets/boton-descargar.png';
+      const FRAME_W = 335, FRAME_H = 92, COLS = 4, FRAMES = 26;
+      const FRAME_MS = 1000 / 24;
+      const button = document.querySelector('.download-button');
+      const ctx = button.querySelector('canvas').getContext('2d');
+      const message = document.getElementById('download-message');
+      const hint = document.getElementById('download-hint');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const sheet = new Image();
+      let frame = 0, target = 0, accum = 0, last = 0, raf = 0;
+      let hovered = false, focused = false, tapped = false, messageTimer;
+
+      function draw() {
+        if (!ctx || !sheet.complete || !sheet.naturalWidth) return;
+        ctx.clearRect(0, 0, FRAME_W, FRAME_H);
+        ctx.drawImage(sheet, (frame % COLS) * FRAME_W,
+          Math.floor(frame / COLS) * FRAME_H,
+          FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+      }
+      function animate(timestamp) {
+        raf = 0;
+        if (!last) last = timestamp;
+        accum += Math.min(timestamp - last, 100);
+        last = timestamp;
+        while (accum >= FRAME_MS && frame !== target) {
+          accum -= FRAME_MS;
+          frame += Math.sign(target - frame);
+          draw();
+        }
+        if (frame !== target) {
+          raf = requestAnimationFrame(animate);
+        } else {
+          accum = 0;
+          last = 0;
+        }
+      }
+      function updateTarget() {
+        target = (hovered || focused || tapped) ? FRAMES - 1 : 0;
+        if (reducedMotion.matches) {
+          if (raf) cancelAnimationFrame(raf);
+          raf = 0;
+          frame = target;
+          accum = 0;
+          last = 0;
+          draw();
+          return;
+        }
+        if (frame !== target && !raf) raf = requestAnimationFrame(animate);
+      }
+      button.addEventListener('pointerenter', event => {
+        if (event.pointerType !== 'touch') { hovered = true; updateTarget(); }
+      });
+      button.addEventListener('pointerleave', event => {
+        if (event.pointerType !== 'touch') { hovered = false; updateTarget(); }
+      });
+      button.addEventListener('focus', () => { focused = true; updateTarget(); });
+      button.addEventListener('blur', () => {
+        focused = false;
+        tapped = false;
+        updateTarget();
+      });
+      button.addEventListener('click', event => {
+        if (event.detail !== 0 && window.matchMedia('(hover: none)').matches) {
+          focused = false;
+          tapped = !tapped;
+          updateTarget();
+        }
+        if (EXPERIENCE_URL) {
+          const link = document.createElement('a');
+          link.href = EXPERIENCE_URL;
+          link.download = '';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          return;
+        }
+        clearTimeout(messageTimer);
+        message.hidden = false;
+        messageTimer = setTimeout(() => { message.hidden = true; }, 4500);
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') message.hidden = true;
+      });
+      reducedMotion.addEventListener('change', updateTarget);
+      sheet.onload = draw;
+      sheet.src = SHEET_URL;
+      if (EXPERIENCE_URL) {
+        hint.textContent = 'Descargar la experiencia interactiva de Marmolado.';
+      }
+    })();
+  </script>
+  <script>
+    (() => {
+      const photo = document.querySelector('.secret-photo-zone');
+      function setRevealed(revealed) {
+        photo.classList.toggle('is-revealed', revealed);
+        photo.setAttribute('aria-pressed', String(revealed));
+      }
+      function moveLens(event) {
+        const box = photo.getBoundingClientRect();
+        photo.style.setProperty('--lens-x', (event.clientX - box.left) + 'px');
+        photo.style.setProperty('--lens-y', (event.clientY - box.top) + 'px');
+      }
+      photo.addEventListener('pointerenter', event => {
+        if (event.pointerType === 'touch') return;
+        moveLens(event);
+        setRevealed(true);
+      });
+      photo.addEventListener('pointermove', event => {
+        if (event.pointerType !== 'touch') moveLens(event);
+      });
+      photo.addEventListener('pointerleave', event => {
+        if (event.pointerType !== 'touch') setRevealed(false);
+      });
+      photo.addEventListener('pointerdown', event => {
+        if (event.pointerType !== 'touch') return;
+        setRevealed(!photo.classList.contains('is-revealed'));
+      });
+      photo.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        setRevealed(!photo.classList.contains('is-revealed'));
+      });
+      photo.addEventListener('focus', () => {
+        photo.style.setProperty('--lens-x', '50%');
+        photo.style.setProperty('--lens-y', '50%');
+      });
+    })();
+  </script>
+  <script>
+    (() => {
+      'use strict';
+      const vinyl = document.querySelector('.desk-vinyl');
+      const canvas = document.querySelector('.vinyl-canvas');
+      const context = canvas.getContext('2d');
+      const hotspot = document.querySelector('.vinyl-hotspot');
+      const frameUrls = Array.from({ length: 26 }, (_, index) =>
+        `EXPORTS-PAGINA/discoRotar/caja_${String(index).padStart(5, '0')}.png`);
+      const images = frameUrls.map(url => {
+        const image = new Image();
+        image.src = url;
+        return image;
+      });
+      const decoded = new Array(frameUrls.length).fill(false);
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const frameDuration = 1000 / 12;
+      let frame = 0, raf = 0, lastTick = 0, elapsed = 0;
+      let hovered = false, keyboardActive = false, tapped = false;
+      let canvasReady = false;
+
+      function drawFrame() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(images[frame], 0, 0);
+      }
+
+      function tick(now) {
+        if (!raf) return;
+        if (lastTick) elapsed += Math.min(now - lastTick, 250);
+        lastTick = now;
+        let advances = 0;
+        while (elapsed >= frameDuration && advances < 3) {
+          const next = (frame + 1) % frameUrls.length;
+          if (!decoded[next]) { elapsed = frameDuration; break; }
+          frame = next;
+          elapsed -= frameDuration;
+          advances++;
+          drawFrame();
+        }
+        raf = requestAnimationFrame(tick);
+      }
+      function update() {
+        const playing = canvasReady && (hovered || keyboardActive || tapped) && !document.hidden && !reducedMotion.matches;
+        if (playing && !raf) raf = requestAnimationFrame(tick);
+        if (!playing && raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+          lastTick = 0;
+          elapsed = 0;
+        }
+        hotspot.setAttribute('aria-pressed', String(tapped));
+      }
+      hotspot.addEventListener('pointerenter', event => {
+        if (event.pointerType === 'touch') return;
+        hovered = true;
+        update();
+      });
+      hotspot.addEventListener('pointermove', event => {
+        if (event.pointerType !== 'touch' && !hovered) { hovered = true; update(); }
+      });
+      hotspot.addEventListener('pointerleave', event => {
+        if (event.pointerType === 'touch') return;
+        hovered = false;
+        update();
+      });
+      hotspot.addEventListener('pointerdown', event => {
+        if (event.pointerType !== 'touch') return;
+        tapped = !tapped;
+        update();
+      });
+      hotspot.addEventListener('focus', () => {
+        if (hotspot.matches(':focus-visible')) { keyboardActive = true; update(); }
+      });
+      hotspot.addEventListener('blur', () => { keyboardActive = false; update(); });
+      window.addEventListener('blur', () => { hovered = keyboardActive = tapped = false; update(); });
+      document.addEventListener('visibilitychange', () => { if (document.hidden) hovered = false; update(); });
+      reducedMotion.addEventListener('change', update);
+      if (context) images.forEach((image, index) => {
+        image.decode().then(() => {
+          decoded[index] = true;
+          if (index === 0) {
+            drawFrame();
+            canvas.hidden = false;
+            vinyl.hidden = true;
+            canvasReady = true;
+            update();
+          }
+        }).catch(() => {});
+      });
+    })();
+  </script>
+  <script type="application/json" id="globe-frames">["assets/globo-frames/frame-0000.png", "assets/globo-frames/frame-0001.png", "assets/globo-frames/frame-0002.png", "assets/globo-frames/frame-0003.png", "assets/globo-frames/frame-0004.png", "assets/globo-frames/frame-0005.png", "assets/globo-frames/frame-0006.png", "assets/globo-frames/frame-0007.png", "assets/globo-frames/frame-0008.png", "assets/globo-frames/frame-0009.png", "assets/globo-frames/frame-0010.png", "assets/globo-frames/frame-0011.png", "assets/globo-frames/frame-0012.png", "assets/globo-frames/frame-0013.png", "assets/globo-frames/frame-0014.png", "assets/globo-frames/frame-0015.png", "assets/globo-frames/frame-0016.png", "assets/globo-frames/frame-0017.png", "assets/globo-frames/frame-0018.png", "assets/globo-frames/frame-0019.png", "assets/globo-frames/frame-0020.png"]</script>
+  <script>
+(() => {
+  'use strict';
+  const sphere = document.querySelector('.globe-sphere');
+  const canvas = sphere.querySelector('.globe-composite');
+  const back = sphere.querySelector('.globe-back');
+  const front = sphere.querySelector('.globe-front');
+  const reflections = sphere.querySelector('.globe-reflections');
+  const modelFallback = sphere.querySelector('.globe-model');
+  const FRAME_URLS = JSON.parse(document.getElementById('globe-frames').textContent);
+  const COUNT = FRAME_URLS.length, INITIAL = Math.min(COUNT - 1, Math.round(72 * COUNT / 360)), SIZE = canvas.width;
+  const INERTIA_TAU = 180;
+  const MAX_VELOCITY = COUNT * .75 / 1000;
+  const STOP_VELOCITY = COUNT * .012 / 1000;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const frames = new Array(COUNT), loading = new Array(COUNT);
+  let target = INITIAL, rotationPosition = INITIAL, dragging = null, raf = 0;
+  let context = null, reflectionPixels = null, backOpacity = .85, backdrop = '#28282a';
+  let inertiaRaf = 0;
+  let renderedFrame = -1, renderedContext;
+  let glowSuppressedUntilExit = false;
+
+  function ready(image) {
+    if (image.complete) {
+      return image.naturalWidth ? Promise.resolve() : Promise.reject(new Error('Imagen no disponible'));
+    }
+    return new Promise((resolve, reject) => {
+      image.addEventListener('load', resolve, { once: true });
+      image.addEventListener('error', reject, { once: true });
+    });
+  }
+  function loadFrame(index) {
+    if (frames[index]) return Promise.resolve(frames[index]);
+    if (!loading[index]) {
+      loading[index] = new Promise((resolve, reject) => {
+        const image = new Image();
+        image.decoding = 'async';
+        image.onload = () => { frames[index] = image; resolve(image); };
+        image.onerror = () => reject(new Error('Fotograma no disponible'));
+        image.src = FRAME_URLS[index];
+      });
+    }
+    return loading[index];
+  }
+  function prepareRenderer() {
+    const reflectionCanvas = document.createElement('canvas');
+    reflectionCanvas.width = reflectionCanvas.height = SIZE;
+    const reflectionContext = reflectionCanvas.getContext('2d', { willReadFrequently: true });
+    const compositeContext = canvas.getContext('2d', { willReadFrequently: true });
+    if (!reflectionContext || !compositeContext) return;
+    reflectionContext.drawImage(reflections, 0, 0, SIZE, SIZE);
+    reflectionPixels = reflectionContext.getImageData(0, 0, SIZE, SIZE).data;
+    const style = getComputedStyle(sphere);
+    const opacity = Number.parseFloat(style.getPropertyValue('--globe-back-opacity'));
+    backdrop = style.getPropertyValue('--globe-backdrop').trim() || backdrop;
+    if (Number.isFinite(opacity)) backOpacity = Math.max(0, Math.min(1, opacity));
+    context = compositeContext;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+  }
+  function renderFrame(index) {
+    const image = frames[index];
+    if (!image) return;
+    if (index === renderedFrame && context === renderedContext) return;
+    // Encuadre original completo, reducido de 1920 × 1080 a 640 × 360.
+    // El mismo origen y la misma escala se aplican a todas las posiciones.
+    const scale = .78 * (1920 / image.naturalWidth) * SIZE / 983;
+    const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
+    const x = (-282.85 / 983) * SIZE;
+    const y = (62.64 / 983) * SIZE;
+    modelFallback.src = FRAME_URLS[index];
+    modelFallback.style.left = (100 * x / SIZE) + '%';
+    modelFallback.style.top = (100 * y / SIZE) + '%';
+    modelFallback.style.width = (100 * width / SIZE) + '%';
+    modelFallback.style.height = (100 * height / SIZE) + '%';
+    if (context && reflectionPixels) {
+      try {
+        context.clearRect(0, 0, SIZE, SIZE);
+        context.save();
+        context.beginPath();
+        context.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, 2 * Math.PI);
+        context.clip();
+        // Fondo oscuro y composición Dividir del prototipo de referencia.
+        context.fillStyle = backdrop;
+        context.fillRect(0, 0, SIZE, SIZE);
+        context.globalAlpha = backOpacity;
+        context.drawImage(back, 0, 0, SIZE, SIZE);
+        context.globalAlpha = 1;
+        context.drawImage(image, x, y, width, height);
+        context.drawImage(front, 0, 0, SIZE, SIZE);
+        context.restore();
+        const composite = context.getImageData(0, 0, SIZE, SIZE);
+        const pixels = composite.data;
+        // Dividir, con composición alfa de las capas de vidrio.
+        for (let i = 0; i < pixels.length; i += 4) {
+          const sourceAlpha = reflectionPixels[i + 3] / 255;
+          if (!sourceAlpha) continue;
+          const backdropAlpha = pixels[i + 3] / 255;
+          const alpha = sourceAlpha + backdropAlpha * (1 - sourceAlpha);
+          for (let channel = 0; channel < 3; channel++) {
+            const backdrop = pixels[i + channel] / 255;
+            const source = reflectionPixels[i + channel] / 255;
+            const divided = source === 0 ? 1 : Math.min(1, backdrop / source);
+            const premultiplied = (1 - sourceAlpha) * backdropAlpha * backdrop
+              + (1 - backdropAlpha) * sourceAlpha * source
+              + sourceAlpha * backdropAlpha * divided;
+            pixels[i + channel] = Math.round(255 * premultiplied / alpha);
+          }
+          pixels[i + 3] = Math.round(255 * alpha);
+        }
+        context.putImageData(composite, 0, 0);
+        sphere.classList.add('is-composited');
+        canvas.hidden = false;
+      } catch {
+        context = null;
+        sphere.classList.remove('is-composited');
+        canvas.hidden = true;
+      }
+    }
+    const angle = Math.round(index * 3600 / COUNT) / 10;
+    sphere.setAttribute('aria-valuenow', String(angle));
+    sphere.setAttribute('aria-valuetext', angle + ' grados');
+    renderedFrame = index;
+    renderedContext = context;
+  }
+  function scheduleRender() {
+    if (raf || !frames[target] || (target === renderedFrame && context === renderedContext)) return;
+    raf = requestAnimationFrame(() => { raf = 0; renderFrame(target); });
+  }
+  function setFrame(position) {
+    const index = ((Math.round(position) % COUNT) + COUNT) % COUNT;
+    target = index;
+    loadFrame(index).then(() => {
+      if (target === index) scheduleRender();
+    }).catch(() => {});
+  }
+  function stopInertia() {
+    if (inertiaRaf) cancelAnimationFrame(inertiaRaf);
+    inertiaRaf = 0;
+    sphere.classList.remove('is-coasting');
+  }
+  function startInertia(initialVelocity) {
+    stopInertia();
+    if (reducedMotion.matches || Math.abs(initialVelocity) <= STOP_VELOCITY) return;
+    let velocity = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, initialVelocity));
+    let lastTime = null;
+    sphere.classList.add('is-coasting');
+    function coast(timestamp) {
+      inertiaRaf = 0;
+      if (lastTime === null) lastTime = timestamp;
+      const dt = Math.max(0, Math.min(timestamp - lastTime, 64));
+      lastTime = timestamp;
+      const decay = Math.exp(-dt / INERTIA_TAU);
+      rotationPosition += velocity * INERTIA_TAU * (1 - decay);
+      velocity *= decay;
+      setFrame(rotationPosition);
+      if (Math.abs(velocity) > STOP_VELOCITY) {
+        inertiaRaf = requestAnimationFrame(coast);
+      } else {
+        stopInertia();
+      }
+    }
+    inertiaRaf = requestAnimationFrame(coast);
+  }
+  function eventTime(event) {
+    return Number.isFinite(event.timeStamp) ? event.timeStamp : performance.now();
+  }
+  function pointerInsideSphere(event) {
+    const bounds = sphere.getBoundingClientRect();
+    const radius = bounds.width / 2;
+    const dx = event.clientX - bounds.left - radius;
+    const dy = event.clientY - bounds.top - radius;
+    return dx * dx + dy * dy <= radius * radius;
+  }
+  function updateGlobeGlow(event) {
+    if (glowSuppressedUntilExit) {
+      sphere.classList.remove('is-hovered');
+      return;
+    }
+    if (event.pointerType === 'touch') {
+      sphere.classList.toggle('is-hovered', Boolean(dragging));
+      return;
+    }
+    sphere.classList.toggle('is-hovered', pointerInsideSphere(event));
+  }
+  sphere.addEventListener('pointerenter', event => {
+    if (!glowSuppressedUntilExit) sphere.classList.remove('glow-paused');
+    updateGlobeGlow(event);
+  });
+  sphere.addEventListener('pointerleave', () => {
+    sphere.classList.remove('is-hovered');
+  });
+  // Pointer capture may emit a new enter after release. Only a real move outside
+  // the circle rearms the hint and glow for the next hover.
+  window.addEventListener('pointermove', event => {
+    if (dragging || event.pointerType === 'touch') return;
+    if (!pointerInsideSphere(event)) {
+      glowSuppressedUntilExit = false;
+      sphere.classList.remove('is-hovered');
+    }
+  });
+  sphere.addEventListener('pointerdown', event => {
+    if (event.isPrimary === false || event.button !== 0 || dragging) return;
+    stopInertia();
+    glowSuppressedUntilExit = false;
+    sphere.classList.remove('glow-paused');
+    if (event.pointerType !== 'touch') event.preventDefault();
+    sphere.focus({ preventScroll: true });
+    dragging = {
+      id: event.pointerId, x: event.clientX, position: rotationPosition,
+      span: Math.max(100, sphere.getBoundingClientRect().width * 1.2),
+      lastX: event.clientX, lastTime: eventTime(event), velocity: 0
+    };
+    sphere.setPointerCapture(event.pointerId);
+    sphere.classList.add('is-dragging');
+    updateGlobeGlow(event);
+  });
+  sphere.addEventListener('pointermove', event => {
+    updateGlobeGlow(event);
+    if (!dragging || dragging.id !== event.pointerId) return;
+    const now = eventTime(event), dt = Math.max(1, now - dragging.lastTime);
+    const sampleVelocity = (event.clientX - dragging.lastX) * COUNT / (dragging.span * dt);
+    const weight = 1 - Math.exp(-dt / 45);
+    dragging.velocity += (sampleVelocity - dragging.velocity) * weight;
+    dragging.lastX = event.clientX;
+    dragging.lastTime = now;
+    rotationPosition = dragging.position + (event.clientX - dragging.x) * COUNT / dragging.span;
+    setFrame(rotationPosition);
+  });
+  function stopDrag(withInertia = false, releasedAt = 0) {
+    if (!dragging) return;
+    const id = dragging.id;
+    const idle = Math.max(0, releasedAt - dragging.lastTime);
+    const velocity = dragging.velocity * Math.exp(-idle / 85);
+    dragging = null;
+    sphere.classList.remove('is-dragging');
+    if (sphere.hasPointerCapture(id)) sphere.releasePointerCapture(id);
+    if (withInertia) startInertia(velocity);
+  }
+  sphere.addEventListener('pointerup', event => {
+    if (dragging && event.pointerId === dragging.id) {
+      glowSuppressedUntilExit = true;
+      sphere.classList.add('glow-paused');
+      sphere.classList.remove('is-hovered');
+      stopDrag(true, eventTime(event));
+    }
+  });
+  for (const type of ['pointercancel', 'lostpointercapture']) {
+    sphere.addEventListener(type, event => {
+      if (dragging && event.pointerId === dragging.id) stopDrag();
+      if (type === 'pointercancel') {
+        glowSuppressedUntilExit = true;
+        sphere.classList.add('glow-paused');
+        sphere.classList.remove('is-hovered');
+      }
+    });
+  }
+  sphere.addEventListener('keydown', event => {
+    let next;
+    if (event.key === 'ArrowRight') next = target + 1;
+    else if (event.key === 'ArrowLeft') next = target - 1;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = COUNT - 1;
+    else return;
+    event.preventDefault();
+    stopInertia();
+    stopDrag();
+    rotationPosition = next;
+    setFrame(next);
+  });
+  function stopInteraction() {
+    stopDrag(); stopInertia();
+    sphere.classList.add('glow-paused');
+    sphere.classList.remove('is-hovered');
+  }
+  window.addEventListener('blur', stopInteraction);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopInteraction(); });
+  reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stopInertia(); });
+  sphere.setAttribute('aria-valuemax', String(Math.round((COUNT - 1) * 3600 / COUNT) / 10));
+  Promise.all([ready(back), ready(front), ready(reflections), loadFrame(INITIAL)])
+    .then(() => {
+      prepareRenderer();
+      scheduleRender();
+      // Precarga para que los cambios de sentido no esperen a la red.
+      for (let i = 0; i < COUNT; i++) loadFrame(i).catch(() => {});
+    }).catch(() => {
+      // La versión por imágenes permite girar sin composición de reflejos.
+      loadFrame(INITIAL).then(scheduleRender).catch(() => {});
+    });
+})();
+  </script>
+</body>
+</html>

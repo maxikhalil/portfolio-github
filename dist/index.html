@@ -182,7 +182,14 @@ header{top:calc(var(--edge-space) + 12px);right:calc(var(--edge-space) + 12px);b
 @media (max-width:600px) {
   #backHead[data-section="thesis"] {
     top: 60px;
-    width: clamp(44px, 13.5vw, 72px);
+    width: clamp(52px, 17.5vw, 88px);
+    aspect-ratio: 217 / 238;
+    overflow: hidden;
+  }
+  #backHead[data-section="thesis"] img {
+    position: absolute;
+    left: 0;
+    top: -16%;
   }
 }
 @media (max-width:340px) {

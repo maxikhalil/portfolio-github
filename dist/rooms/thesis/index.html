@@ -653,7 +653,7 @@
     (() => {
       'use strict';
       // Al tener el ZIP final, reemplazar la cadena vacía por su URL.
-      const EXPERIENCE_URL = '';
+      const EXPERIENCE_URL = 'https://github.com/maxikhalil/portfolio-github/releases/download/v1.0.0/ExperienciaMarmolado.zip';
       const SHEET_URL = 'assets/boton-descargar.png';
       const FRAME_W = 335, FRAME_H = 92, COLS = 4, FRAMES = 26;
       const FRAME_MS = 1000 / 24;
@@ -661,6 +661,13 @@
       const ctx = button.querySelector('canvas').getContext('2d');
       const message = document.getElementById('download-message');
       const hint = document.getElementById('download-hint');
+      const mobileDevice = navigator.userAgentData?.mobile === true ||
+        /Android|iPhone|iPad|iPod|Windows Phone|Mobi/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (mobileDevice) {
+        message.textContent = 'Para descargar la experiencia de Marmolado, abrí este portafolio desde una computadora.';
+        hint.textContent = message.textContent;
+      }
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
       const sheet = new Image();
       let frame = 0, target = 0, accum = 0, last = 0, raf = 0;
@@ -721,7 +728,7 @@
           tapped = !tapped;
           updateTarget();
         }
-        if (EXPERIENCE_URL) {
+        if (!mobileDevice && EXPERIENCE_URL) {
           const link = document.createElement('a');
           link.href = EXPERIENCE_URL;
           link.download = '';
@@ -740,7 +747,7 @@
       reducedMotion.addEventListener('change', updateTarget);
       sheet.onload = draw;
       sheet.src = SHEET_URL;
-      if (EXPERIENCE_URL) {
+      if (!mobileDevice && EXPERIENCE_URL) {
         hint.textContent = 'Descargar la experiencia interactiva de Marmolado.';
       }
     })();

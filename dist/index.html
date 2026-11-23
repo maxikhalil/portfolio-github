@@ -784,6 +784,9 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
 
     canvas.addEventListener("click", event => {
       if (!isOverInteraction(event)) return;
+      visit(["head"]);
+    });
+    function openHead() {
       beforeOpening = {
         frame: lastDrawn,
         x: pointerX,
@@ -795,7 +798,7 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
       canvas.classList.add("expanded");
       openingStarted = performance.now() + 1000 / openingConfig.fps;
       canvas.style.cursor = "default";
-    });
+    }
 
 
     // Zonas trazadas con la imagen HD de los ambientes y alineadas al frame 464.
@@ -942,7 +945,7 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
 
     let closingStarted = null;
     let closingFrom=0;
-    let homeBusy=false;
+
     function finishClosing(){
       mode='tracking';
       openingIndex=-1;
@@ -965,11 +968,7 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
       mode='closing';roomPointer=null;clearRoom();
       canvas.style.cursor='default';
     }
-    $('homeLogo').addEventListener('click',async()=>{
-      if(navigating||homeBusy)return;
-      homeBusy=true;
-      try{if(activeSection)await backToHead();startClosing();}finally{homeBusy=false;}
-    });
+    $('homeLogo').addEventListener('click', () => goToDepth(0));
     function syncIntro() {
       const hidden = mode !== "tracking" || Boolean(activeSection);
       const intro = $("introCopy");
@@ -1050,8 +1049,67 @@ const sectionFrames={};let activeSection=null;let navigating=false;
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function enterSection(key){if(navigating||activeSection||mode!=='open')return;navigating=true;$('navFade').classList.add('cover');await delay(360);document.querySelectorAll('.room-label').forEach(l=>l.style.opacity=0);roomPointer=null;$('sectionHost').hidden=false;Object.values(sectionFrames).forEach(f=>f.hidden=true);let frame=sectionFrames[key];if(!frame){frame=document.createElement('iframe');frame.title=sectionNames[key];frame.allow='autoplay; fullscreen';const ready=new Promise(r=>frame.onload=r);frame.src=sectionPaths[key];sectionFrames[key]=frame;$('sectionHost').appendChild(frame);await ready;}frame.hidden=false;activeSection=key;$('backHead').dataset.section=key;document.body.classList.add("in-ambient");$('backHead').hidden=false;frame.contentWindow.dispatchEvent(new Event('resize'));await delay(50);$('navFade').classList.remove('cover');await delay(360);navigating=false;}
 async function backToHead(){if(navigating||!activeSection)return;navigating=true;$('navFade').classList.add('cover');await delay(360);const f=sectionFrames[activeSection],doc=f.contentDocument;if(doc){doc.querySelectorAll('video,audio').forEach(m=>m.pause());const rec=doc.querySelector('.record.playing');if(rec)rec.click();}f.remove();delete sectionFrames[activeSection];$('sectionHost').hidden=true;$('backHead').hidden=true;activeSection=null;document.body.classList.remove("in-ambient");roomPointer=null;rooms.forEach(r=>r.opacity=0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(openingFrames.at(-1).image,0,0);canvas.style.cursor='default';$('navFade').classList.remove('cover');await delay(360);navigating=false;}
-$('backHead').addEventListener('click',backToHead);
-canvas.addEventListener('click',e=>{if(mode!=='open'||navigating||activeSection)return;const r=rooms.find(r=>overRoom(e,r));if(r)enterSection(sectionByLabel[r.label]);});
+// The outer page owns navigation, including details opened inside a room.
+let route = [];
+let applyingRoute = false;
+let rendering = false;
+let goingBack = false;
+const sameRoute = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const initialRoute = history.state?.portfolioRoute;
+if (Array.isArray(initialRoute)) route = initialRoute;
+else history.replaceState({...history.state, portfolioRoute: []}, '');
+
+function goToDepth(depth) {
+  if (goingBack || depth >= route.length) return;
+  goingBack = true;
+  history.go(depth - route.length);
+}
+function visit(next) {
+  if (applyingRoute || goingBack || sameRoute(route, next)) return;
+  if (next.length < route.length && sameRoute(next, route.slice(0, next.length))) {
+    goToDepth(next.length);
+    return;
+  }
+  const method = next.length === route.length ? 'replaceState' : 'pushState';
+  history[method]({ ...history.state, portfolioRoute: next }, '');
+  route = next;
+  renderRoute();
+}
+async function renderRoute() {
+  if (rendering) return;
+  rendering = true;
+  try {
+    while (true) {
+      const requested = route;
+      const key = requested[1];
+      if (activeSection && activeSection !== key) await backToHead();
+      else if (!requested.length) { startClosing(); break; }
+      else if (!openingFrames.length || mode === 'closing') await delay(32);
+      else if (mode === 'tracking') openHead();
+      else if (key && mode !== 'open') await delay(32);
+      else if (key && !activeSection) await enterSection(key);
+      else {
+        const room = sectionFrames[key]?.contentWindow;
+        if (room) {
+          $('backHead').hidden = key === 'illustrations' && requested.length > 2;
+          room.navigateDetail = (...parts) => visit(['head', key, ...parts]);
+          applyingRoute = true;
+          try { room.restoreDetail?.(...requested.slice(2)); }
+          finally { applyingRoute = false; }
+        }
+        break;
+      }
+    }
+  } finally { rendering = false; }
+}
+window.addEventListener('popstate', e => {
+  route = e.state?.portfolioRoute || [];
+  goingBack = false;
+  renderRoute();
+});
+$('backHead').addEventListener('click', () => goToDepth(1));
+if (route.length) renderRoute();
+canvas.addEventListener('click',e=>{if(mode!=='open'||navigating||activeSection)return;const r=rooms.find(r=>overRoom(e,r));if(r)visit(['head',sectionByLabel[r.label]]);});
 requestAnimationFrame(animate);
 
 

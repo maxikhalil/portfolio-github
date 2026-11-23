@@ -514,7 +514,11 @@
       .header-inner { padding-inline: 5%; gap: 12px; }
       .thesis-logo { width: clamp(120px, 32vw, 136px); }
       .download-button { width: clamp(150px, 32vw, 160px); }
-      .download-message { right: 16px; }
+      .download-message {
+        left: calc(env(safe-area-inset-left) + 28px + clamp(52px, 17.5vw, 88px));
+        right: max(16px, env(safe-area-inset-right));
+        margin-left: auto;
+      }
       .thesis-scene {
         margin-top: var(--header-height);
         height: calc(var(--unit) * 720);
@@ -722,6 +726,13 @@
         tapped = false;
         updateTarget();
       });
+      function dismissMessage() {
+        clearTimeout(messageTimer);
+        message.hidden = true;
+      }
+      document.addEventListener('click', event => {
+        if (!message.hidden && !button.contains(event.target)) dismissMessage();
+      }, true);
       button.addEventListener('click', event => {
         if (event.detail !== 0 && window.matchMedia('(hover: none)').matches) {
           focused = false;
@@ -737,12 +748,15 @@
           link.remove();
           return;
         }
-        clearTimeout(messageTimer);
+        if (!message.hidden) {
+          dismissMessage();
+          return;
+        }
         message.hidden = false;
-        messageTimer = setTimeout(() => { message.hidden = true; }, 4500);
+        messageTimer = setTimeout(dismissMessage, 4500);
       });
       document.addEventListener('keydown', event => {
-        if (event.key === 'Escape') message.hidden = true;
+        if (event.key === 'Escape') dismissMessage();
       });
       reducedMotion.addEventListener('change', updateTarget);
       sheet.onload = draw;

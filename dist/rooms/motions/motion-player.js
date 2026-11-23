@@ -22,6 +22,7 @@
   function dismiss() {
     unload();
     dialog.close();
+    window.navigateDetail?.();
   }
   function open(video, button) {
     unload();
@@ -36,6 +37,7 @@
     iframe.src = `https://player.vimeo.com/video/${video.id}?autoplay=1&playsinline=1&title=0&byline=0&portrait=0&dnt=1`;
     player.append(iframe);
     dialog.showModal();
+    window.navigateDetail?.(videos.indexOf(video));
     close.focus({ preventScroll: true });
   }
   document.querySelectorAll('#gears .gear').forEach((button, index) => {
@@ -46,6 +48,11 @@
     button.setAttribute('aria-controls', 'motionDialog');
     button.onclick = () => open(video, button);
   });
+  window.restoreDetail = index => {
+    if (index == null) { if (dialog.open) dismiss(); return; }
+    const button = document.querySelectorAll('#gears .gear')[index];
+    if (button && (!dialog.open || trigger !== button)) open(videos[index], button);
+  };
   close.addEventListener('click', dismiss);
   dialog.addEventListener('cancel', event => {
     event.preventDefault();

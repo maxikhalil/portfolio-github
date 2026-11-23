@@ -251,6 +251,9 @@
     #world, #overlay, .overlay-layout, .art .frame{ transition:none; }
   }
 
+  #mainImageVisual:has(> img), .overlay-reference { overflow:hidden; }
+  #mainImageVisual > img, .overlay-reference img { touch-action:none; cursor:zoom-in; }
+  img[data-zoomed] { cursor:zoom-out !important; }
 </style>
 </head>
 <body>
@@ -463,7 +466,109 @@ shape shape</div>
 
   let activeVideo = null;
 
+  let activeArt = null;
+  let zoomImage = null, scale = 1, offsetX = 0, offsetY = 0;
+  const fingers = new Map();
+  let lastTap = null;
+  function resetZoom() {
+    if (zoomImage) {
+      zoomImage.style.transform = '';
+      delete zoomImage.dataset.zoomed;
+    }
+    zoomImage = null; scale = 1; offsetX = offsetY = 0;
+    fingers.clear(); lastTap = null;
+  }
+  function applyZoom(img, target, from, to, followMouse = false) {
+    if (zoomImage !== img) resetZoom();
+    zoomImage = img;
+    const box = img.parentElement.getBoundingClientRect();
+    const cx = box.left + box.width / 2, cy = box.top + box.height / 2;
+    const next = Math.max(1, Math.min(5, target));
+    const ratio = next / scale;
+    const fit = Math.min(img.clientWidth / img.naturalWidth, img.clientHeight / img.naturalHeight);
+    const limitX = Math.max(0, (img.naturalWidth * fit * next - box.width) / 2);
+    const limitY = Math.max(0, (img.naturalHeight * fit * next - box.height) / 2);
+    if (followMouse) {
+      const across = Math.max(-1, Math.min(1, (cx - to.x) / (box.width / 2)));
+      const down = Math.max(-1, Math.min(1, (cy - to.y) / (box.height / 2)));
+      offsetX = across * limitX;
+      offsetY = down * limitY;
+    } else {
+      offsetX = Math.max(-limitX, Math.min(limitX, to.x - cx - (from.x - cx - offsetX) * ratio));
+      offsetY = Math.max(-limitY, Math.min(limitY, to.y - cy - (from.y - cy - offsetY) * ratio));
+    }
+    scale = next;
+    img.toggleAttribute('data-zoomed', scale > 1);
+    img.style.transform = 'translate(' + offsetX + 'px,' + offsetY + 'px) scale(' + scale + ')';
+  }
+  function bindZoom(img) {
+    img.draggable = false;
+    img.tabIndex = 0;
+    img.title = 'Un clic con el mouse o un doble toque para ampliar. Mové el mouse para recorrer la imagen ampliada. También podés usar dos dedos, la rueda o las teclas + y −.';
+    const point = e => ({x:e.clientX, y:e.clientY});
+    const middle = (a,b) => ({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+    const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+    img.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || !img.naturalWidth) return;
+      if (zoomImage !== img) { resetZoom(); zoomImage = img; }
+      img.setPointerCapture(e.pointerId);
+      const pos = point(e);
+      fingers.set(e.pointerId,{pos,start:pos,tap:true});
+      if (fingers.size > 1) for (const f of fingers.values()) f.tap = false;
+    });
+    img.addEventListener('pointermove', e => {
+      if (e.pointerType === 'mouse' && !e.buttons && zoomImage === img && scale > 1) {
+        const pos = point(e);
+        applyZoom(img, scale, pos, pos, true);
+        return;
+      }
+      const f = fingers.get(e.pointerId);
+      if (!f || zoomImage !== img) return;
+      const prev = f.pos, now = point(e);
+      f.pos = now;
+      if (distance(now,f.start)>5) f.tap = false;
+      const other = [...fingers.values()].find(item => item !== f);
+      if (other) {
+        const before = distance(prev,other.pos);
+        if (before > 0) applyZoom(img,scale*distance(now,other.pos)/before,middle(prev,other.pos),middle(now,other.pos));
+      } else if (scale > 1) applyZoom(img,scale,prev,now);
+    });
+    img.addEventListener('pointerup', e => {
+      const f = fingers.get(e.pointerId);
+      fingers.delete(e.pointerId);
+      if (!f?.tap) { lastTap = null; return; }
+      const pos = point(e);
+      if (e.pointerType === 'mouse' || (lastTap && e.timeStamp-lastTap.time < 380 && distance(pos,lastTap.pos)<28)) {
+        applyZoom(img,scale>1?1:2.5,pos,pos); lastTap = null;
+      } else lastTap = {time:e.timeStamp,pos};
+    });
+    img.addEventListener('lostpointercapture', e => fingers.delete(e.pointerId));
+    img.addEventListener('wheel', e => {
+      if (!img.naturalWidth || (!e.deltaY)) return;
+      if (scale === 1 && e.deltaY > 0) return;
+      e.preventDefault();
+      const pos = point(e);
+      applyZoom(img,(zoomImage===img?scale:1)*Math.exp(-e.deltaY*.002),pos,pos);
+    },{passive:false});
+    img.addEventListener('keydown', e => {
+      if (!['+','=','-','0','Enter'].includes(e.key) || !img.naturalWidth) return;
+      e.preventDefault();
+      const r = img.parentElement.getBoundingClientRect();
+      const pos = {x:r.left+r.width/2,y:r.top+r.height/2};
+      const old = zoomImage===img?scale:1;
+      const next = e.key==='Enter' ? (old>1?1:2.5) : e.key==='0' ? 1 : old*(e.key==='-'?.67:1.5);
+      applyZoom(img,next,pos,pos);
+    });
+  }
+  bindZoom(overlayReferenceImage);
+  window.restoreDetail = index => {
+    const button = artButtons[index];
+    if (button && activeArt !== button) openOverlay(button);
+    if (!button && activeArt) closeCurrentOverlay();
+  };
   function openOverlay(btn){
+    resetZoom();
+    activeArt = btn;
     // Focusing an offscreen piece must not move the fixed detail panel.
     app.scrollLeft = 0; app.scrollTop = 0;
     if (activeVideo){ activeVideo.pause(); activeVideo.remove(); activeVideo = null; }
@@ -490,7 +595,7 @@ shape shape</div>
       media.decoding = 'async';
       media.src = src;
       media.alt = btn.dataset.title;
-      media.draggable = false;
+      bindZoom(media);
     }
     mainImageVisual.appendChild(media);
     overlayTags.replaceChildren();
@@ -509,13 +614,17 @@ shape shape</div>
     app.classList.add('is-overlay-open');
     overlay.setAttribute('aria-hidden', 'false');
     overlay.scrollTop = 0;
+    window.navigateDetail?.(artButtons.indexOf(btn));
     if (activeVideo) activeVideo.play().catch(() => { /* Native controls remain available. */ });
   }
 
   function closeCurrentOverlay(){
     prevDrawX = null; prevDrawY = null;
     if (activeVideo){ activeVideo.pause(); activeVideo.currentTime = 0; }
+    resetZoom();
+    activeArt = null;
     overlay.classList.remove('open');
+    window.navigateDetail?.();
     app.classList.remove('is-overlay-open');
     overlay.setAttribute('aria-hidden', 'true');
   }

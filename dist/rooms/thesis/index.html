@@ -376,11 +376,8 @@
       left: 50%;
       width: 49%;
       transform: translate(-50%, -50%);
-      opacity: 0;
-      transition: opacity .25s ease;
       pointer-events: none;
     }
-    .globe-sphere.is-hovered .globe-drag-hint { opacity: 1; }
     .globe-drag-hint img {
       display: block;
       width: 100%;
@@ -572,6 +569,7 @@
       .desk-cards { top: calc(var(--unit) * 690); left: calc(var(--unit) * -122); width: calc(var(--unit) * 500); }
       .desk-glasses { top: calc(var(--unit) * 597); left: calc(var(--unit) * 102); width: calc(var(--unit) * 225); }
       .snow-globe { top: calc(var(--unit) * 363); left: calc(var(--unit) * 194); }
+      .globe-drag-hint { top: 19%; }
     }
     @media (max-width: 340px) {
       :root { --header-height: 56px; }
@@ -586,7 +584,6 @@
       .cork-cutout { animation: none; }
       .cork-kisses { animation: none; }
       .secret-lens { transition: none; }
-      .globe-drag-hint { transition: none; }
       .globe-drag-hint img { animation: none; filter: none; }
     }
   </style>

@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Maxi · Portafolio</title>
+  <link rel="icon" type="image/png" href="assets/favicon-mj.png">
   <style>
     * {
       box-sizing: border-box;
@@ -923,7 +924,7 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
       }
     }
 
-    let closingStarted=0;
+    let closingStarted = null;
     let closingFrom=0;
     let homeBusy=false;
     function finishClosing(){
@@ -943,7 +944,8 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
     function startClosing(){
       if(!openingFrames.length || mode==='tracking' || mode==='closing')return;
       closingFrom=mode==='open'?openingFrames.length-1:Math.max(0,openingIndex);
-      closingStarted=performance.now();
+      // El primer requestAnimationFrame fija el reloj del cierre.
+      closingStarted = null;
       mode='closing';roomPointer=null;clearRoom();
       canvas.style.cursor='default';
     }
@@ -988,6 +990,7 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
         }
       }
       if(mode==='closing'){
+        if (closingStarted === null) closingStarted = now;
         const step=Math.floor((now-closingStarted)*openingConfig.fps/1000);
         if(step>=closingFrom){
           // Restaurar la imagen visible antes de abrir; el primer frame de
@@ -995,8 +998,14 @@ body.in-ambient #homeLogo, body.in-ambient #iconBorder, body.in-ambient #pauseBo
           finishClosing();
         }else{
           const index=closingFrom-step;
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-          ctx.drawImage(openingFrames[index].image,0,0);
+          if (index !== openingIndex) {
+            const image = openingFrames[index].image;
+            ctx.save();
+            ctx.globalCompositeOperation = 'copy';
+            ctx.drawImage(image, 0, 0);
+            ctx.restore();
+            openingIndex = index;
+          }
           $('status').textContent='Cerrando cabeza…';
         }
       }
